@@ -6,4 +6,5 @@ const isServer = typeof window === "undefined";
 
 export const API = axios.create({
   baseURL: backendURL,
+  withCredentials: true,
 });
