@@ -19,38 +19,24 @@ interface RegisterRequest {
 }
 
 export const register = async (data: RegisterRequest) => {
-  const response = await fetch("/api/auth/register", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify(data),
+  const response = await API.post("/auth/register", data, {
+    withCredentials: true,
   });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Registration failed");
-  }
-
-  return response.json();
+  return response.data;
 };
 
-export const validateRegister = async (validateData: {
-  email: string;
-  password: string;
-}) => {
-  const response = await fetch(
-    `/api/auth/validate?email=${encodeURIComponent(validateData.email)}`,
-    {
-      method: "GET",
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Validation failed");
+export const validateRegister = async (email: string) => {
+  try {
+    const response = await API.get(
+      `/auth/validate-existing-email?email=${encodeURIComponent(email)}`,
+      {
+        withCredentials: true,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Validation failed:", error);
+    throw error;
   }
-
-  return response.json();
 };

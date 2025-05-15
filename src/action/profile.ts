@@ -1,32 +1,20 @@
+import { ProfileData } from "@/types/profile";
 import API from "@/utils/axiosClient";
 
-export interface ProfileData {
-  passengerFirstName: string;
-  passengerMiddleName: string;
-  passengerLastName: string;
-  passengerPhone: string;
-  passengerAddress: string;
-  passengerDateOfBirth: string;
-  nationalID: string;
-  studentID: string | null;
-  hasDisability: boolean;
-  isRevolutionary: boolean;
-}
+type ProfileImageResponse = {
+  profileImage: {
+    base64: string;
+    mimeType: string;
+    imageType: string;
+  };
+} | null;
 
-interface ProfileResponse {
-  success: boolean;
-  message: string;
-  data: ProfileData;
-}
-
-export async function getMyProfile(): Promise<ProfileData> {
+export const getCurrentUserProfile = async (): Promise<ProfileData> => {
   try {
-    const response = await API.get<ProfileResponse>("/profile/my-info", {
+    const response = await API.get("/profile/my-info", {
       withCredentials: true,
     });
 
-    console.log("Profile response:", response.data);
-    
     return response.data.data;
   } catch (error: any) {
     console.error("Failed to fetch user profile:", error);
@@ -35,4 +23,131 @@ export async function getMyProfile(): Promise<ProfileData> {
     }
     throw error;
   }
-}
+};
+
+export const updateProfileInfo = async (data: {
+  passengerPhone: string;
+  passengerAddress: string;
+}) => {
+  const response = await API.put("/profile/edit-my-info", data, {
+    withCredentials: true,
+  });
+
+  return response.data;
+};
+
+export const updateProfileCredentials = async (data: {
+  passengerEmail: string;
+  password?: string;
+}) => {
+  const response = await API.put("/auth/update-my-info", data, {
+    withCredentials: true,
+  });
+
+  return response.data;
+};
+
+export const getProfileImage = async (): Promise<ProfileImageResponse> => {
+  try {
+    const response = await API.get("/profile/profile-image", {
+      withCredentials: true,
+    });
+
+    console.log("PROFILE IMAGE RESPONSE", response.data.data);
+
+    return response.data.data;
+  } catch (error: any) {
+    console.error("Failed to fetch user profile image:", error);
+    return null;
+  }
+};
+
+export const updateProfileImage = async (file: File) => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await API.post("/profile/upload-profile-image", formData, {
+      withCredentials: true,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error("Failed to update profile image:", error);
+    throw error;
+  }
+};
+
+type UploadStudentCardImagesParams = {
+  frontImageType: "STUDENT_ID_FRONT" | "NATIONAL_ID_FRONT";
+  backImageType: "STUDENT_ID_BACK" | "NATIONAL_ID_BACK";
+  frontFile: File;
+  backFile: File;
+};
+
+type CardImagesResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    nationalIdPictures: [
+      {
+        mimeType: string;
+        base64: string;
+      },
+      {
+        mimeType: string;
+        base64: string;
+      }
+    ];
+    studentIdPictures: [
+      {
+        mimeType: string;
+        base64: string;
+      },
+      {
+        mimeType: string;
+        base64: string;
+      }
+    ];
+  };
+};
+
+export const getCardImages = async (): Promise<CardImagesResponse> => {
+  try {
+    const response = await API.get("/profile/card-images", {
+      withCredentials: true,
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error("Failed to get card images:", error);
+    throw error;
+  }
+};
+
+export const updateCardImages = async (data: UploadStudentCardImagesParams) => {
+  try {
+    const formData = new FormData();
+    formData.append("frontFile", data.frontFile);
+    formData.append("backFile", data.backFile);
+
+    const response = await API.post("/profile/upload-card-images", formData, {
+      params: {
+        frontImageType: data.frontImageType,
+        backImageType: data.backImageType,
+      },
+      withCredentials: true,
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error("Failed to update card images:", error);
+    throw error;
+  }
+};

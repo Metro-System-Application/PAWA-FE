@@ -7,60 +7,85 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import type { UserProfileType } from "@/types/profile";
 import {
   Pen,
   Wallet,
   ShieldCheck,
   FileText,
+  Minus,
+  Loader2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
+import type { UserProfileType } from "@/types/profile";
+import { useState, useEffect } from "react";
+import { getCardImages } from "@/action/profile";
 
-type ProfilePreviewTabProps = {
+type ProfilePreviewCardProps = {
   user: UserProfileType;
-  getInitials: () => string;
   setActiveTab: (value: string) => void;
 };
 
-function ProfilePreviewTab({
-  user,
-  getInitials,
-  setActiveTab,
-}: ProfilePreviewTabProps) {
-  const fullName = `${user.firstName} ${
-    user.middleName ? user.middleName + " " : ""
-  }${user.lastName}`;
+function ProfilePreviewCard({ user, setActiveTab }: ProfilePreviewCardProps) {
+  const fullName = `${user.firstName} ${user.middleName} ${user.lastName}`;
+  const [cardImages, setCardImages] = useState<any>(null);
+  const [isLoadingImages, setIsLoadingImages] = useState(false);
 
-  // Helper function to get verification status badge
-  const getVerificationStatusBadge = (
-    status: "pending" | "verified" | "rejected" | null
-  ) => {
+  // Fetch card images from backend
+  useEffect(() => {
+    const fetchCardImages = async () => {
+      try {
+        setIsLoadingImages(true);
+        const response = await getCardImages();
+        const images = response.data;
+
+        if (images) {
+          const processedImages: any = {
+            national: {
+              front: `data:${images?.nationalIdPictures[0].mimeType};base64,${images?.nationalIdPictures[0].base64}`,
+              back: `data:${images?.nationalIdPictures[1].mimeType};base64,${images?.nationalIdPictures[1].base64}`,
+              status: images?.nationalIdPictures[0] ? "verified" : null,
+            },
+            student: {
+              front: `data:${images?.studentIdPictures[0].mimeType};base64,${images?.studentIdPictures[0].base64}`,
+              back: `data:${images?.studentIdPictures[1].mimeType};base64,${images?.studentIdPictures[1].base64}`,
+              status: images?.studentIdPictures[0] ? "verified" : null,
+            },
+          };
+
+          setCardImages(processedImages);
+        }
+      } catch (error) {
+        console.error("Failed to fetch card images:", error);
+      } finally {
+        setIsLoadingImages(false);
+      }
+    };
+
+    fetchCardImages();
+  }, []);
+
+  const getVerificationStatusBadge = (status: "verified" | null) => {
     if (!status) return null;
-
-    switch (status) {
-      case "verified":
-        return (
-          <Badge
-            variant="outline"
-            className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1"
-          >
-            <ShieldCheck className="h-3 w-3" />
-            Verified
-          </Badge>
-        );
-      default:
-        return null;
+    if (status === "verified") {
+      return (
+        <Badge
+          variant="outline"
+          className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1"
+        >
+          <ShieldCheck className="h-3 w-3" />
+          Verified
+        </Badge>
+      );
     }
   };
 
-  // Check if any ID verification has been submitted
   const hasNationalIdVerification =
-    user.idVerification?.national.front && user.idVerification?.national.back;
+    cardImages?.national?.front && cardImages?.national?.back;
   const hasStudentIdVerification =
-    user.idVerification?.student.front && user.idVerification?.student.back;
+    cardImages?.student?.front && cardImages?.student?.back;
   const hasAnyVerification =
     hasNationalIdVerification || hasStudentIdVerification;
 
@@ -72,29 +97,38 @@ function ProfilePreviewTab({
           <CardDescription>Your current profile details</CardDescription>
         </div>
         <Button
-          variant={"outline"}
+          variant="link"
           onClick={() => setActiveTab("edit")}
-          className="flex items-center"
+          className="flex items-center text-foreground"
         >
-          <Pen className="w-4 h-4 mr-2" />
+          <Pen className="size-4" />
           Edit
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col items-center text-center mb-6">
-          <Avatar className="h-24 w-24 mb-4">
-            {user.profilePicture && (
-              <AvatarImage
-                src={user.profilePicture || "/placeholder.svg"}
-                alt={fullName}
-              />
-            )}
-            <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
-          </Avatar>
-          <h2 className="text-2xl font-bold">{fullName}</h2>
+        <div className="flex flex-col items-center text-center mb-4">
+          <div className="relative h-32 w-32 rounded-full overflow-hidden border-1 border-gray-300">
+            <Image
+              src={
+                typeof user.profilePicture === "string" &&
+                user.profilePicture.length > 0
+                  ? user.profilePicture.startsWith("data:image")
+                    ? user.profilePicture
+                    : `data:image/png;base64,${user.profilePicture}`
+                  : "/images/default-avatar.jpg"
+              }
+              alt="Profile Picture"
+              fill
+              className="object-cover"
+              sizes="size-32"
+              priority
+            />
+          </div>
+
+          <h2 className="text-2xl font-bold mt-2">{fullName}</h2>
           <p className="text-muted-foreground">{user.email}</p>
 
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
             <Badge
               variant="outline"
               className="px-3 py-1 bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-1.5 rounded-lg"
@@ -105,19 +139,14 @@ function ProfilePreviewTab({
 
             {/* Show verification status badges if available */}
             {hasNationalIdVerification &&
-              getVerificationStatusBadge(
-                user.idVerification?.national.status || null
-              )}
-            {hasStudentIdVerification &&
-              getVerificationStatusBadge(
-                user.idVerification?.student.status || null
-              )}
+              getVerificationStatusBadge("verified")}
+            {hasStudentIdVerification && getVerificationStatusBadge("verified")}
           </div>
         </div>
 
-        <Separator className="my-4" />
+        <Separator className="my-2" />
 
-        <div className="space-y-4">
+        <div className="space-y-2">
           {/* Personal Details Section */}
           <div>
             <h3 className="font-semibold text-lg mb-4">Personal Details</h3>
@@ -152,7 +181,7 @@ function ProfilePreviewTab({
             </div>
           </div>
 
-          <Separator className="my-4" />
+          <Separator className="my-2" />
 
           {/* Additional Details Section */}
           <div>
@@ -163,21 +192,17 @@ function ProfilePreviewTab({
                 <div className="flex items-center gap-2">
                   <p className="font-medium">{user.nationalId}</p>
                   {hasNationalIdVerification &&
-                    getVerificationStatusBadge(
-                      user.idVerification?.national.status || null
-                    )}
+                    getVerificationStatusBadge("verified")}
                 </div>
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Student ID</p>
                 <div className="flex items-center gap-2">
                   <p className="font-medium">
-                    {user.studentId || "Not provided"}
+                    {user.studentId || <Minus className="size-4" />}
                   </p>
                   {hasStudentIdVerification &&
-                    getVerificationStatusBadge(
-                      user.idVerification?.student.status || null
-                    )}
+                    getVerificationStatusBadge("verified")}
                 </div>
               </div>
               <div className="space-y-1">
@@ -193,26 +218,33 @@ function ProfilePreviewTab({
                   Revolutionary Contribution Status
                 </p>
                 <p className="font-medium">
-                  {user.revolutionaryContribution ? "Yes" : "No"}
+                  {user?.revolutionaryContribution ? "Yes" : "No"}
                 </p>
               </div>
             </div>
           </div>
 
           {/* ID Verification Section */}
-          {hasAnyVerification && (
+          {isLoadingImages ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+              <p className="text-sm text-muted-foreground">
+                Loading ID information...
+              </p>
+            </div>
+          ) : hasAnyVerification ? (
             <>
-              <Separator className="my-4" />
+              <Separator className="my-2" />
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-lg">ID Verification</h3>
                   <Button
-                    variant="ghost"
+                    variant="link"
                     size="sm"
                     onClick={() => setActiveTab("verification")}
-                    className="text-sm"
+                    className="text-sm text-foreground"
                   >
-                    View Details
+                    <span>View Details</span>
                   </Button>
                 </div>
 
@@ -225,7 +257,7 @@ function ProfilePreviewTab({
                           National ID (Front)
                         </p>
                         <img
-                          src={user.idVerification?.national.front || ""}
+                          src={cardImages.national.front || "/placeholder.svg"}
                           alt="National ID Front"
                           className="w-full h-auto object-cover rounded"
                           style={{ maxHeight: "80px" }}
@@ -236,7 +268,7 @@ function ProfilePreviewTab({
                           National ID (Back)
                         </p>
                         <img
-                          src={user.idVerification?.national.back || ""}
+                          src={cardImages.national.back || "/placeholder.svg"}
                           alt="National ID Back"
                           className="w-full h-auto object-cover rounded"
                           style={{ maxHeight: "80px" }}
@@ -252,7 +284,7 @@ function ProfilePreviewTab({
                           Student ID (Front)
                         </p>
                         <img
-                          src={user.idVerification?.student.front || ""}
+                          src={cardImages.student.front || "/placeholder.svg"}
                           alt="Student ID Front"
                           className="w-full h-auto object-cover rounded"
                           style={{ maxHeight: "80px" }}
@@ -263,7 +295,7 @@ function ProfilePreviewTab({
                           Student ID (Back)
                         </p>
                         <img
-                          src={user.idVerification?.student.back || ""}
+                          src={cardImages.student.back || "/placeholder.svg"}
                           alt="Student ID Back"
                           className="w-full h-auto object-cover rounded"
                           style={{ maxHeight: "80px" }}
@@ -274,10 +306,7 @@ function ProfilePreviewTab({
                 </div>
               </div>
             </>
-          )}
-
-          {/* ID Verification CTA if no verification */}
-          {!hasAnyVerification && (
+          ) : (
             <>
               <Separator className="my-4" />
               <div className="bg-gray-50 rounded-lg p-4 text-center">
@@ -298,4 +327,4 @@ function ProfilePreviewTab({
   );
 }
 
-export default ProfilePreviewTab;
+export default ProfilePreviewCard;
