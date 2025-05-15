@@ -4,8 +4,8 @@ import Link from "next/link";
 import { Search, ShoppingCart, TrainFront } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { UserDropdownMenu } from "@/components/common/user-dropdown-menu";
-import { AppSidebar } from "@/components/common/app-sidebar";
+import { UserDropdownMenu } from "@/components/custom/user-dropdown-menu";
+import { AppSidebar } from "@/components/custom/app-sidebar";
 import { useCartStore } from "@/store/cart-store";
 
 interface AppHeaderProps {

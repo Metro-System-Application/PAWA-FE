@@ -94,7 +94,12 @@ export function RegisterForm({
   };
 
   const handleStep1Submit = (data: Step1Values) => {
-    const onValidateAction = validateRegister(data.email);
+    const validateData = {
+      email: data.email,
+      password: data.password,
+    };
+
+    const onValidateAction = validateRegister(validateData);
 
     toast.promise(onValidateAction, {
       loading: "Validating your email...",

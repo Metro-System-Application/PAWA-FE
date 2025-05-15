@@ -16,35 +16,28 @@ export type UserProfileType = {
     national: {
       front: string | null;
       back: string | null;
-      status: "verified" | null;
+      status: "pending" | "verified" | "rejected" | null;
     };
     student: {
       front: string | null;
       back: string | null;
-      status: "verified" | null;
+      status: "pending" | "verified" | "rejected" | null;
     };
   };
 };
 
 export type ProfileFormType = {
   email: string;
-  password?: string;
-  confirmPassword?: string;
+  password: string;
+  confirmPassword: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
+  nationalId: string;
+  dateOfBirth: string;
   address: string;
   phoneNumber: string;
-  // studentId: string;
+  studentId: string;
+  disabilityStatus: boolean;
+  revolutionaryContribution: boolean;
 };
-
-export interface ProfileData {
-  passengerEmail: string;
-  passengerFirstName: string;
-  passengerMiddleName: string;
-  passengerLastName: string;
-  passengerPhone: string;
-  passengerAddress: string;
-  passengerDateOfBirth: string;
-  nationalID: string;
-  studentID: string | null;
-  hasDisability: boolean;
-  isRevolutionary: boolean;
-}

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
-import { AuthProvider } from "@/components/auth/auth-provider";
+import { AuthProvider } from "@/contexts/auth-context";
 import { ThemeProvider } from "@/components/provider/theme-provider";
 import React from "react";
 
@@ -39,7 +39,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           {children}
-          <Toaster position="bottom-right" duration={1500} />
+          <Toaster position="bottom-right" duration={500} />
         </AuthProvider>
       </ThemeProvider>
 

@@ -11,10 +11,12 @@ import {
 } from "@/components/ui/sheet";
 
 import { formatCurrency } from "@/lib/utils";
-import { ShoppingCart } from "lucide-react";
+import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { TicketCartItem, useCartStore } from "@/store/cart-store";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { ConfirmDialog } from "@/components/dialog/confirm-dialog";
+import { ConfirmDialog } from "@/components/custom/confirm-dialog";
 import { useRouter } from "next/navigation";
 import TicketCartItemDisplay from "./ticket-cart-display";
 
